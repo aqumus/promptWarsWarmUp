@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CookPal — your daily cooking to-do list</title>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#171e26; --panel2:#1f2933; --line:#2b3743;
+    --ink:#e8eef2; --muted:#90a0ad; --accent:#5be37e; --accent2:#39c0ff;
+    --warn:#ffb454; --bad:#ff6b6b; --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+       background:radial-gradient(1200px 600px at 80% -10%,#1b2a22,transparent),var(--bg);color:var(--ink);line-height:1.5}
+  a{color:var(--accent2)}
+  .wrap{max-width:920px;margin:0 auto;padding:24px 18px 80px}
+  header.app{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:20px}
+  .brand .logo{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;color:#06210f;font-size:18px}
+  .sub{color:var(--muted);font-size:13px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:16px}
+  h2{font-size:16px;margin:0 0 12px;letter-spacing:.2px}
+  h3{font-size:14px;margin:0 0 8px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+  label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+  input,select,textarea{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--ink);
+        padding:10px 12px;border-radius:10px;font-size:14px;font-family:inherit}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent2)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+  .chip{padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);cursor:pointer;font-size:13px;user-select:none}
+  .chip.on{background:var(--accent);color:#06210f;border-color:var(--accent);font-weight:600}
+  button{cursor:pointer;font-family:inherit}
+  .btn{background:var(--accent);color:#06210f;border:none;padding:11px 18px;border-radius:10px;font-weight:700;font-size:14px}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  .btn.small{padding:7px 12px;font-size:13px}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .meals{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+  .meal{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px;position:relative}
+  .meal .slot{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--accent)}
+  .meal.now{border-color:var(--accent)}
+  .meal .now-badge{position:absolute;top:12px;right:12px;font-size:10px;background:var(--accent);color:#06210f;padding:2px 7px;border-radius:999px;font-weight:700}
+  .meal .name{font-size:16px;font-weight:700;margin:4px 0}
+  .meal .tags{font-size:12px;color:var(--muted);margin-bottom:8px}
+  .meal ul{margin:6px 0 0;padding-left:18px;font-size:13px;color:var(--muted)}
+  .grocery{width:100%;border-collapse:collapse;font-size:14px}
+  .grocery td{padding:7px 6px;border-bottom:1px solid var(--line)}
+  .grocery td.q{color:var(--muted);width:90px}
+  .grocery td.p{text-align:right;width:90px}
+  .feas{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .feas .big{font-size:26px;font-weight:800}
+  .pill{padding:5px 12px;border-radius:999px;font-weight:700;font-size:13px}
+  .pill.ok{background:rgba(91,227,126,.15);color:var(--accent)}
+  .pill.bad{background:rgba(255,107,107,.15);color:var(--bad)}
+  .bar{height:10px;background:var(--panel2);border-radius:999px;overflow:hidden;flex:1;min-width:160px;border:1px solid var(--line)}
+  .bar > i{display:block;height:100%;background:var(--accent)}
+  .bar > i.over{background:var(--bad)}
+  .subs li{font-size:13px;margin-bottom:4px}
+  .todo label{display:flex;gap:10px;align-items:flex-start;color:var(--ink);font-size:14px;margin:0;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer}
+  .todo input{width:auto;margin-top:3px}
+  .todo .done span{text-decoration:line-through;color:var(--muted)}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+  .toggle{display:flex;gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .toggle button{background:var(--panel2);color:var(--muted);border:none;padding:8px 14px;font-size:13px}
+  .toggle button.on{background:var(--accent2);color:#04222e;font-weight:700}
+  .switch{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+  .note{font-size:12px;color:var(--muted)}
+  .err{color:var(--bad);font-size:13px}
+  .hidden{display:none}
+  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:30px}
+  .keyrow{display:flex;gap:8px}
+  .keyrow input{flex:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="app">
+    <div class="brand"><span class="logo">🍳</span> CookPal</div>
+    <div class="sub" id="greeting"></div>
+  </header>
+
+  <!-- ONBOARDING -->
+  <section id="onboarding" class="card hidden">
+    <h2>Welcome 👋 Let's set up your kitchen profile</h2>
+    <p class="note">Stored only in your browser (localStorage). Nothing leaves your device.</p>
+
+    <div class="row">
+      <div>
+        <label>Your name</label>
+        <input id="f-name" placeholder="Alex" />
+      </div>
+      <div>
+        <label>Currency</label>
+        <select id="f-currency"></select>
+      </div>
+    </div>
+
+    <label>Diet / eating style</label>
+    <div class="chips" id="f-diet"></div>
+
+    <label>Cuisines you like</label>
+    <div class="chips" id="f-cuisines"></div>
+
+    <div class="row">
+      <div>
+        <label>Allergies / ingredients to avoid <span class="note">(comma separated)</span></label>
+        <input id="f-allergies" placeholder="peanut, shrimp" />
+      </div>
+      <div>
+        <label>Dislikes <span class="note">(comma separated)</span></label>
+        <input id="f-dislikes" placeholder="mushroom" />
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Daily food budget (<span class="cur-sym"></span>/day)</label>
+        <input id="f-daily" type="number" min="0" step="1" placeholder="15" />
+      </div>
+      <div>
+        <label>Special-day budget (weekends / treats)</label>
+        <input id="f-special" type="number" min="0" step="1" placeholder="30" />
+      </div>
+    </div>
+
+    <div style="margin-top:18px">
+      <button class="btn" id="save-profile">Save & start cooking →</button>
+    </div>
+  </section>
+
+  <!-- MAIN APP -->
+  <section id="app" class="hidden">
+    <div class="toolbar">
+      <div class="toggle" id="src-toggle">
+        <button data-src="offline" class="on">🧮 Offline engine</button>
+        <button data-src="ai">🤖 Claude AI</button>
+      </div>
+      <label class="switch"><input type="checkbox" id="special-toggle" style="width:auto" /> Special day (use treat budget)</label>
+      <button class="btn small" id="generate">Generate plan</button>
+      <button class="btn small ghost" id="regen">↻ Regenerate</button>
+      <button class="btn small ghost" id="edit-profile">Edit profile</button>
+    </div>
+
+    <div id="ai-key" class="card hidden">
+      <h3>Claude API key</h3>
+      <div class="keyrow">
+        <input id="f-apikey" type="password" placeholder="sk-ant-..." />
+        <button class="btn small" id="save-key">Save key</button>
+      </div>
+      <p class="note">Stored in localStorage; sent directly from your browser to Anthropic. Uses <code>claude-haiku-4-5</code>. Falls back to the offline engine if missing or it fails.</p>
+    </div>
+
+    <div id="status" class="note" style="margin-bottom:12px"></div>
+
+    <div id="results" class="hidden">
+      <!-- Meals -->
+      <div class="card">
+        <h2 id="plan-title">Today's plan</h2>
+        <div class="meals" id="meals"></div>
+      </div>
+
+      <!-- Budget feasibility -->
+      <div class="card">
+        <h2>Budget feasibility</h2>
+        <div class="feas">
+          <div>
+            <div class="big" id="total-cost">—</div>
+            <div class="note">estimated cost</div>
+          </div>
+          <div class="bar"><i id="bar-fill"></i></div>
+          <div>
+            <div class="pill" id="feas-pill">—</div>
+            <div class="note" id="budget-line"></div>
+          </div>
+        </div>
+        <div id="subs-block" class="hidden" style="margin-top:14px">
+          <h3>Substitutions applied to fit budget</h3>
+          <ul class="subs" id="subs"></ul>
+        </div>
+      </div>
+
+      <!-- Grocery -->
+      <div class="card">
+        <h2>Grocery list</h2>
+        <table class="grocery"><tbody id="grocery"></tbody></table>
+      </div>
+
+      <!-- Todo -->
+      <div class="card">
+        <h2>🧾 Cooking to-do list</h2>
+        <div class="todo" id="todo"></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>CookPal · PromptWars warm-up · rule-based engine with swappable AI data provider</footer>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   CookPal — a personal cooking to-do list (PromptWars warm-up)
+   - Onboarding profile -> localStorage
+   - MealProvider contract (offline rule-based OR Claude AI)
+   - Deterministic pipeline: price -> grocery -> budget -> subs -> todo
+   ============================================================ */
+
+const LS = {
+  profile: "cookpal_profile",
+  plan:    "cookpal_plan",
+  apikey:  "cookpal_apikey",
+  checked: "cookpal_checked",
+};
+
+/* -------------------- reference data -------------------- */
+
+const CURRENCIES = {
+  USD: { symbol: "$",  fxFromUSD: 1 },
+  EUR: { symbol: "€",  fxFromUSD: 0.92 },
+  GBP: { symbol: "£",  fxFromUSD: 0.79 },
+  INR: { symbol: "₹",  fxFromUSD: 83 },
+  AED: { symbol: "د.إ ", fxFromUSD: 3.67 },
+  JPY: { symbol: "¥",  fxFromUSD: 150 },
+  AUD: { symbol: "A$", fxFromUSD: 1.52 },
+  CAD: { symbol: "C$", fxFromUSD: 1.36 },
+  SGD: { symbol: "S$", fxFromUSD: 1.34 },
+};
+
+// Prices are in USD per listed unit. cheaperAlt drives budget substitutions.
+const INGREDIENTS = {
+  eggs:{usd:0.30,unit:"pc"}, bread:{usd:0.20,unit:"slice"}, butter:{usd:0.15,unit:"tbsp"},
+  milk:{usd:0.50,unit:"cup"}, oats:{usd:0.40,unit:"cup"}, banana:{usd:0.30,unit:"pc"},
+  apple:{usd:0.50,unit:"pc"}, honey:{usd:0.20,unit:"tbsp"}, yogurt:{usd:0.80,unit:"cup"},
+  berries:{usd:1.50,unit:"cup",cheaperAlt:"banana"}, spinach:{usd:0.60,unit:"cup"},
+  tomato:{usd:0.40,unit:"pc"}, onion:{usd:0.30,unit:"pc"}, garlic:{usd:0.10,unit:"clove"},
+  potato:{usd:0.40,unit:"pc"}, rice:{usd:0.50,unit:"cup"}, pasta:{usd:0.60,unit:"cup"},
+  chicken:{usd:2.50,unit:"100g",cheaperAlt:"tofu"}, beef:{usd:4.00,unit:"100g",cheaperAlt:"lentils"},
+  salmon:{usd:6.00,unit:"100g",cheaperAlt:"tilapia"}, tilapia:{usd:2.00,unit:"100g"},
+  tofu:{usd:1.00,unit:"100g"}, lentils:{usd:0.50,unit:"cup"}, chickpeas:{usd:0.60,unit:"cup"},
+  beans:{usd:0.50,unit:"cup"}, cheese:{usd:1.00,unit:"50g",cheaperAlt:"tofu"}, oliveoil:{usd:0.20,unit:"tbsp"},
+  flour:{usd:0.10,unit:"cup"}, cucumber:{usd:0.40,unit:"pc"}, lettuce:{usd:0.50,unit:"cup"},
+  avocado:{usd:1.20,unit:"pc",cheaperAlt:"cucumber"}, lemon:{usd:0.40,unit:"pc"},
+  bellpepper:{usd:0.60,unit:"pc"}, carrot:{usd:0.25,unit:"pc"}, broccoli:{usd:0.80,unit:"cup"},
+  mushroom:{usd:0.70,unit:"cup"}, coconutmilk:{usd:0.90,unit:"cup"}, currypowder:{usd:0.10,unit:"tbsp"},
+  soysauce:{usd:0.10,unit:"tbsp"}, ginger:{usd:0.15,unit:"tbsp"}, noodles:{usd:0.60,unit:"cup"},
+  tortilla:{usd:0.40,unit:"pc"}, shrimp:{usd:3.50,unit:"100g",cheaperAlt:"tofu"},
+  bacon:{usd:1.50,unit:"50g",cheaperAlt:"mushroom"}, peanutbutter:{usd:0.30,unit:"tbsp"},
+  coffee:{usd:0.30,unit:"cup"}, granola:{usd:0.60,unit:"cup"}, quinoa:{usd:0.70,unit:"cup",cheaperAlt:"rice"},
+  paneer:{usd:1.20,unit:"100g",cheaperAlt:"tofu"},
+};
+
+// diet: vegan | veg | nonveg   (veg = vegetarian: dairy/eggs ok)
+const RECIPES = [
+  // breakfast
+  {id:"b1",name:"Veggie Omelette",meal:"breakfast",cuisine:"western",diet:"veg",speed:"quick",
+   ing:[["eggs",2],["spinach",0.5],["tomato",1],["cheese",1],["butter",1]],
+   steps:["Whisk the eggs with a pinch of salt","Sauté spinach & tomato in butter","Pour eggs, add cheese, fold and serve"]},
+  {id:"b2",name:"Banana Berry Oatmeal",meal:"breakfast",cuisine:"western",diet:"vegan",speed:"quick",
+   ing:[["oats",1],["banana",1],["berries",0.5]],
+   steps:["Simmer oats in water 5 min","Top with sliced banana and berries"]},
+  {id:"b3",name:"Yogurt Granola Parfait",meal:"breakfast",cuisine:"western",diet:"veg",speed:"quick",
+   ing:[["yogurt",1],["granola",0.5],["berries",0.5],["honey",1]],
+   steps:["Layer yogurt, granola and berries","Drizzle with honey"]},
+  {id:"b4",name:"Avocado Toast",meal:"breakfast",cuisine:"western",diet:"vegan",speed:"quick",
+   ing:[["bread",2],["avocado",1],["tomato",1],["lemon",0.5]],
+   steps:["Toast the bread","Mash avocado with lemon & salt","Spread and top with tomato"]},
+  {id:"b5",name:"Masala Egg Bhurji",meal:"breakfast",cuisine:"indian",diet:"veg",speed:"quick",
+   ing:[["eggs",2],["onion",0.5],["tomato",1],["garlic",1],["currypowder",0.5]],
+   steps:["Fry onion, garlic & spices","Add tomato, then scrambled eggs","Cook until set"]},
+  {id:"b6",name:"PB Banana Toast",meal:"breakfast",cuisine:"western",diet:"vegan",speed:"quick",
+   ing:[["bread",2],["peanutbutter",2],["banana",1]],
+   steps:["Toast bread","Spread peanut butter, top with banana slices"]},
+  {id:"b7",name:"Bacon & Eggs",meal:"breakfast",cuisine:"western",diet:"nonveg",speed:"normal",
+   ing:[["eggs",2],["bacon",1],["bread",1]],
+   steps:["Fry the bacon crisp","Fry eggs in the rendered fat","Serve with toast"]},
+  {id:"b8",name:"Spiced Veg Rice Bowl",meal:"breakfast",cuisine:"indian",diet:"vegan",speed:"quick",
+   ing:[["rice",1],["onion",0.5],["potato",1],["currypowder",0.5]],
+   steps:["Sauté onion, potato & spices","Fold in cooked rice and warm through"]},
+  // lunch
+  {id:"l1",name:"Chicken Rice Bowl",meal:"lunch",cuisine:"asian",diet:"nonveg",speed:"normal",
+   ing:[["rice",1],["chicken",1.5],["broccoli",1],["soysauce",1]],
+   steps:["Cook the rice","Stir-fry chicken & broccoli with soy sauce","Serve over rice"]},
+  {id:"l2",name:"Chickpea Salad",meal:"lunch",cuisine:"mediterranean",diet:"vegan",speed:"quick",
+   ing:[["chickpeas",1],["cucumber",1],["tomato",1],["lettuce",1],["oliveoil",1],["lemon",0.5]],
+   steps:["Chop the veg","Toss with chickpeas, olive oil & lemon"]},
+  {id:"l3",name:"Garlic Tomato Pasta",meal:"lunch",cuisine:"italian",diet:"veg",speed:"normal",
+   ing:[["pasta",1],["tomato",2],["garlic",2],["cheese",1],["oliveoil",1]],
+   steps:["Boil pasta","Make garlic-tomato sauce in olive oil","Toss with pasta & cheese"]},
+  {id:"l4",name:"Tofu Stir Fry",meal:"lunch",cuisine:"asian",diet:"vegan",speed:"quick",
+   ing:[["tofu",1.5],["bellpepper",1],["broccoli",1],["soysauce",1],["rice",1]],
+   steps:["Pan-fry tofu until golden","Add veg & soy sauce","Serve over rice"]},
+  {id:"l5",name:"Chicken Wrap",meal:"lunch",cuisine:"western",diet:"nonveg",speed:"quick",
+   ing:[["tortilla",2],["chicken",1],["lettuce",1],["tomato",1]],
+   steps:["Cook & slice chicken","Fill tortillas with chicken, lettuce, tomato","Roll up"]},
+  {id:"l6",name:"Lentil Soup",meal:"lunch",cuisine:"mediterranean",diet:"vegan",speed:"normal",
+   ing:[["lentils",1],["carrot",1],["onion",0.5],["garlic",1]],
+   steps:["Sauté onion, garlic, carrot","Add lentils + water","Simmer 25 min until soft"]},
+  {id:"l7",name:"Paneer Curry & Rice",meal:"lunch",cuisine:"indian",diet:"veg",speed:"normal",
+   ing:[["paneer",1.5],["tomato",2],["onion",1],["currypowder",1],["rice",1]],
+   steps:["Make onion-tomato masala","Add paneer & simmer","Serve with rice"]},
+  {id:"l8",name:"Salmon Quinoa Bowl",meal:"lunch",cuisine:"western",diet:"nonveg",speed:"normal",
+   ing:[["salmon",1.5],["quinoa",1],["spinach",1],["lemon",0.5]],
+   steps:["Cook quinoa","Pan-sear salmon with lemon","Plate over wilted spinach"]},
+  // dinner
+  {id:"d1",name:"Beef & Veg Stew",meal:"dinner",cuisine:"western",diet:"nonveg",speed:"normal",
+   ing:[["beef",1.5],["potato",2],["carrot",1],["onion",1]],
+   steps:["Brown the beef","Add veg + water","Simmer 40 min"]},
+  {id:"d2",name:"Veg Coconut Curry",meal:"dinner",cuisine:"indian",diet:"vegan",speed:"normal",
+   ing:[["potato",2],["chickpeas",1],["coconutmilk",1],["currypowder",1],["onion",1]],
+   steps:["Fry onion & spices","Add potato, chickpeas, coconut milk","Simmer until tender"]},
+  {id:"d3",name:"Shrimp Noodles",meal:"dinner",cuisine:"asian",diet:"nonveg",speed:"normal",
+   ing:[["shrimp",1.5],["noodles",1],["bellpepper",1],["soysauce",1]],
+   steps:["Boil noodles","Stir-fry shrimp & pepper with soy sauce","Toss together"]},
+  {id:"d4",name:"Tomato Cheese Flatbread",meal:"dinner",cuisine:"italian",diet:"veg",speed:"normal",
+   ing:[["tortilla",2],["tomato",2],["cheese",1],["oliveoil",1]],
+   steps:["Top tortillas with tomato & cheese","Bake/pan until melted"]},
+  {id:"d5",name:"Tofu Coconut Curry",meal:"dinner",cuisine:"asian",diet:"vegan",speed:"normal",
+   ing:[["tofu",1.5],["coconutmilk",1],["bellpepper",1],["currypowder",1],["rice",1]],
+   steps:["Sear tofu","Simmer in coconut-curry sauce with pepper","Serve over rice"]},
+  {id:"d6",name:"Chicken Pasta",meal:"dinner",cuisine:"italian",diet:"nonveg",speed:"normal",
+   ing:[["pasta",1],["chicken",1.5],["tomato",2],["garlic",2]],
+   steps:["Boil pasta","Cook chicken in garlic-tomato sauce","Combine"]},
+  {id:"d7",name:"Stuffed Bell Peppers",meal:"dinner",cuisine:"mediterranean",diet:"veg",speed:"normal",
+   ing:[["bellpepper",2],["rice",1],["cheese",1],["tomato",1]],
+   steps:["Cook rice with tomato","Stuff peppers, top with cheese","Bake until soft"]},
+  {id:"d8",name:"Beans & Rice (Rajma-style)",meal:"dinner",cuisine:"indian",diet:"vegan",speed:"normal",
+   ing:[["beans",1],["rice",1],["onion",1],["tomato",1],["currypowder",1]],
+   steps:["Make onion-tomato base","Add beans + water, simmer","Serve with rice"]},
+];
+
+const DIETS = [
+  {id:"nonveg",label:"🍗 Non-veg"},
+  {id:"veg",label:"🥚 Vegetarian"},
+  {id:"vegan",label:"🌱 Vegan"},
+];
+const CUISINES = ["western","indian","asian","italian","mediterranean"];
+
+const SLOTS = ["breakfast","lunch","dinner"];
+const SLOT_EMOJI = {breakfast:"🍳",lunch:"🥗",dinner:"🍲"};
+
+/* -------------------- small helpers -------------------- */
+
+const $ = (s) => document.querySelector(s);
+const pretty = (k) => k.replace(/([a-z])([A-Z])/g,"$1 $2")
+  .replace(/oliveoil/,"olive oil").replace(/coconutmilk/,"coconut milk")
+  .replace(/currypowder/,"curry powder").replace(/soysauce/,"soy sauce")
+  .replace(/bellpepper/,"bell pepper").replace(/peanutbutter/,"peanut butter")
+  .replace(/^./, c=>c.toUpperCase());
+
+function load(key, fallback){ try{ return JSON.parse(localStorage.getItem(key)) ?? fallback; }catch{ return fallback; } }
+function save(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
+
+function timeOfDay(){
+  const h = new Date().getHours();
+  if (h < 11) return "morning";
+  if (h < 16) return "afternoon";
+  return "evening";
+}
+function currentSlot(){
+  const t = timeOfDay();
+  return t==="morning" ? "breakfast" : t==="afternoon" ? "lunch" : "dinner";
+}
+// deterministic seeded RNG so "Regenerate" gives fresh-but-reproducible results
+function rng(seed){ let s = seed >>> 0; return () => (s = (s*1664525 + 1013904223) >>> 0) / 4294967296; }
+
+/* ============================================================
+   MealProvider CONTRACT
+   generate(request) -> Promise<{ meals: { breakfast, lunch, dinner } }>
+   each meal: { id?, name, cuisine, diet, ingredients:[{item,qty,unit}], steps:[] }
+   Providers ONLY choose meals + ingredients. Pricing/budget = pipeline.
+   ============================================================ */
+
+const OfflineProvider = {
+  name: "offline",
+  async generate(req){
+    const { profile, seed } = req;
+    const rand = rng(seed);
+    const meals = {};
+    const usedIngredients = new Set();
+
+    for (const slot of SLOTS){
+      const pool = RECIPES.filter(r => r.meal === slot)
+        .filter(r => dietOK(r.diet, profile.diet))
+        .filter(r => !violatesAvoid(r, profile));
+      const ranked = pool.map(r => ({ r, score: scoreRecipe(r, profile, usedIngredients, rand) }))
+                         .sort((a,b)=> b.score - a.score);
+      const pick = (ranked[0] || { r: pool[0] || RECIPES.find(x=>x.meal===slot) }).r;
+      pick.ing.forEach(([k])=> usedIngredients.add(k));
+      meals[slot] = toContractMeal(pick);
+    }
+    return { meals };
+  }
+};
+
+function dietOK(recipeDiet, userDiet){
+  if (userDiet === "vegan")  return recipeDiet === "vegan";
+  if (userDiet === "veg")    return recipeDiet === "vegan" || recipeDiet === "veg";
+  return true; // nonveg eats anything
+}
+function violatesAvoid(recipe, profile){
+  const avoid = [...(profile.allergies||[]), ...(profile.dislikes||[])];
+  return recipe.ing.some(([k]) => avoid.some(a => pretty(k).toLowerCase().includes(a) || k.includes(a)));
+}
+function scoreRecipe(recipe, profile, used, rand){
+  let s = rand() * 2;                                   // variety jitter
+  if ((profile.cuisines||[]).includes(recipe.cuisine)) s += 3;
+  if (timeOfDay()!=="evening" && recipe.speed==="quick") s += 1; // quicker earlier in the day
+  const overlap = recipe.ing.filter(([k]) => used.has(k)).length;
+  s -= overlap * 0.8;                                   // discourage repeated ingredients
+  s -= estimateUSD(recipe) * 0.05;                      // mild cheaper-is-better nudge
+  return s;
+}
+function estimateUSD(recipe){
+  return recipe.ing.reduce((t,[k,q]) => t + (INGREDIENTS[k] ? INGREDIENTS[k].usd*q : 0), 0);
+}
+function toContractMeal(r){
+  return {
+    id:r.id, name:r.name, cuisine:r.cuisine, diet:r.diet,
+    ingredients: r.ing.map(([item,qty]) => ({ item, qty, unit:(INGREDIENTS[item]||{}).unit || "" })),
+    steps: r.steps.slice(),
+  };
+}
+
+/* -------- AI provider: same contract, powered by Claude -------- */
+const AIProvider = {
+  name: "ai",
+  async generate(req){
+    const key = load(LS.apikey, "");
+    if (!key) throw new Error("no-key");
+    const { profile, budget } = req;
+    const schema = {
+      type:"object", additionalProperties:false,
+      properties:{
+        meals:{ type:"object", additionalProperties:false,
+          properties: Object.fromEntries(SLOTS.map(s => [s, mealSchema()])),
+          required: SLOTS }
+      }, required:["meals"]
+    };
+    const pantry = Object.keys(INGREDIENTS).join(", ");
+    const prompt =
+`You plan one day of meals as a structured cooking assistant.
+Profile: diet=${profile.diet}; liked cuisines=${(profile.cuisines||[]).join(", ")||"any"}; `+
+`avoid=${[...(profile.allergies||[]),...(profile.dislikes||[])].join(", ")||"none"}.
+Time of day now: ${timeOfDay()}. Today's budget hint: ~$${budget.usdHint} USD.
+Plan breakfast, lunch and dinner. Respect the diet and avoid-list strictly.
+Use ONLY ingredient keys from this pantry so prices are known: ${pantry}.
+Quantities use the pantry's natural unit (pc, cup, tbsp, 100g, 50g, slice, clove). Keep it realistic and budget-aware.`;
+
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method:"POST",
+      headers:{
+        "content-type":"application/json",
+        "x-api-key": key,
+        "anthropic-version":"2023-06-01",
+        "anthropic-dangerous-direct-browser-access":"true",
+      },
+      body: JSON.stringify({
+        model:"claude-haiku-4-5",
+        max_tokens:1500,
+        output_config:{ format:{ type:"json_schema", schema } },
+        messages:[{ role:"user", content: prompt }],
+      }),
+    });
+    if (!res.ok) throw new Error("api-" + res.status);
+    const data = await res.json();
+    const text = (data.content || []).find(b => b.type === "text");
+    if (!text) throw new Error("no-content");
+    const parsed = JSON.parse(text.text);
+    // normalize: attach units from pantry, drop unknown ingredients
+    for (const slot of SLOTS){
+      const m = parsed.meals[slot];
+      m.ingredients = (m.ingredients||[])
+        .filter(i => INGREDIENTS[i.item])
+        .map(i => ({ item:i.item, qty:Number(i.qty)||1, unit:INGREDIENTS[i.item].unit }));
+      m.steps = m.steps || [];
+    }
+    return parsed;
+  }
+};
+function mealSchema(){
+  return { type:"object", additionalProperties:false,
+    properties:{
+      name:{type:"string"}, cuisine:{type:"string"}, diet:{type:"string"},
+      ingredients:{ type:"array", items:{ type:"object", additionalProperties:false,
+        properties:{ item:{type:"string"}, qty:{type:"number"} }, required:["item","qty"] } },
+      steps:{ type:"array", items:{type:"string"} },
+    }, required:["name","cuisine","diet","ingredients","steps"] };
+}
+
+/* ============================================================
+   PIPELINE — deterministic, provider-agnostic money math
+   ============================================================ */
+
+function buildGroceryUSD(plan){
+  const agg = {}; // item -> {qty, unit}
+  for (const slot of SLOTS){
+    for (const ing of plan.meals[slot].ingredients){
+      if (!agg[ing.item]) agg[ing.item] = { qty:0, unit:ing.unit };
+      agg[ing.item].qty += ing.qty;
+    }
+  }
+  return Object.entries(agg).map(([item,{qty,unit}]) => ({
+    item, qty, unit, usd: (INGREDIENTS[item]?.usd || 0) * qty
+  })).sort((a,b)=> b.usd - a.usd);
+}
+
+// Try to fit budget by swapping expensive items for their cheaperAlt.
+function fitBudget(plan, budgetUSD){
+  const subs = [];
+  let grocery = buildGroceryUSD(plan);
+  let guard = 0;
+  while (sum(grocery) > budgetUSD && guard++ < 12){
+    const target = grocery.find(g => INGREDIENTS[g.item]?.cheaperAlt
+      && !subs.some(s => s.from === g.item));
+    if (!target) break;                       // nothing left to swap
+    const alt = INGREDIENTS[target.item].cheaperAlt;
+    swapIngredient(plan, target.item, alt);
+    subs.push({ from: target.item, to: alt });
+    grocery = buildGroceryUSD(plan);
+  }
+  return { grocery, totalUSD: sum(grocery), subs };
+}
+function sum(grocery){ return grocery.reduce((t,g)=> t+g.usd, 0); }
+function swapIngredient(plan, from, to){
+  const unit = INGREDIENTS[to].unit;
+  for (const slot of SLOTS){
+    for (const ing of plan.meals[slot].ingredients){
+      if (ing.item === from){ ing.item = to; ing.unit = unit; }
+    }
+  }
+}
+
+function buildTodo(plan, grocery){
+  const items = [];
+  grocery.forEach((g,i)=> items.push({ id:`shop-${g.item}`, kind:"shop",
+    text:`Buy ${fmtQty(g.qty)} ${g.unit} ${pretty(g.item)}` }));
+  SLOTS.forEach(slot => items.push({ id:`cook-${slot}`, kind:"cook",
+    text:`${SLOT_EMOJI[slot]} Make ${slot}: ${plan.meals[slot].name}` }));
+  return items;
+}
+function fmtQty(q){ return Number.isInteger(q) ? q : q.toFixed(2).replace(/\.?0+$/,""); }
+
+/* ============================================================
+   MONEY FORMATTING
+   ============================================================ */
+function fx(usd, profile){
+  const c = CURRENCIES[profile.currency] || CURRENCIES.USD;
+  return usd * c.fxFromUSD;
+}
+function money(usd, profile){
+  const c = CURRENCIES[profile.currency] || CURRENCIES.USD;
+  const v = fx(usd, profile);
+  const dp = (profile.currency === "JPY") ? 0 : 2;
+  return c.symbol + v.toFixed(dp);
+}
+
+/* ============================================================
+   ORCHESTRATION
+   ============================================================ */
+
+let SEED = 1;
+
+async function generatePlan(){
+  const profile = load(LS.profile, null);
+  if (!profile) return;
+  const isSpecial = $("#special-toggle").checked;
+  const budgetUSDLocal = isSpecial ? profile.specialBudget : profile.dailyBudget; // in user currency
+  const budgetUSD = budgetUSDLocal / (CURRENCIES[profile.currency]?.fxFromUSD || 1);
+
+  const src = currentSource();
+  setStatus(src === "ai" ? "🤖 Asking Claude for a meal plan…" : "🧮 Building your plan…");
+  $("#generate").disabled = true; $("#regen").disabled = true;
+
+  const request = { profile, seed: SEED, budget:{ usdHint: budgetUSD.toFixed(0) } };
+  let plan, usedSource = src, fellBack = false;
+
+  try {
+    plan = await (src === "ai" ? AIProvider : OfflineProvider).generate(request);
+    // guard against an empty/odd AI result
+    if (!plan?.meals || SLOTS.some(s => !plan.meals[s]?.ingredients?.length)) throw new Error("thin-plan");
+  } catch (e){
+    if (src === "ai"){
+      fellBack = true; usedSource = "offline";
+      plan = await OfflineProvider.generate(request);
+    } else { setStatus(`<span class="err">Could not build a plan: ${e.message}</span>`); reEnable(); return; }
+  }
+
+  const { grocery, totalUSD, subs } = fitBudget(plan, budgetUSD);
+  const todo = buildTodo(plan, grocery);
+
+  save(LS.plan, { plan, grocery, totalUSD, subs, todo, isSpecial, budgetUSD, ts:Date.now() });
+  save(LS.checked, {}); // fresh checklist for a new plan
+
+  render(profile, { plan, grocery, totalUSD, subs, todo, isSpecial, budgetUSD });
+  let msg = usedSource === "ai" ? "Plan by Claude 🤖" : "Plan by offline engine 🧮";
+  if (fellBack) msg = `⚠️ Claude unavailable — used offline engine instead.`;
+  setStatus(msg);
+  reEnable();
+}
+function reEnable(){ $("#generate").disabled = false; $("#regen").disabled = false; }
+function setStatus(html){ $("#status").innerHTML = html; }
+
+/* ============================================================
+   RENDERING
+   ============================================================ */
+
+function render(profile, R){
+  $("#results").classList.remove("hidden");
+  const slotNow = currentSlot();
+
+  // meals
+  $("#plan-title").textContent = `Today's plan · ${R.isSpecial ? "special day 🎉" : "regular day"}`;
+  $("#meals").innerHTML = SLOTS.map(slot => {
+    const m = R.plan.meals[slot];
+    const isNow = slot === slotNow;
+    return `<div class="meal ${isNow?"now":""}">
+      ${isNow?'<span class="now-badge">up next</span>':''}
+      <div class="slot">${SLOT_EMOJI[slot]} ${slot}</div>
+      <div class="name">${esc(m.name)}</div>
+      <div class="tags">${esc(m.cuisine)} · ${esc(m.diet)}</div>
+      <ul>${m.ingredients.map(i=>`<li>${fmtQty(i.qty)} ${i.unit} ${pretty(i.item)}</li>`).join("")}</ul>
+    </div>`;
+  }).join("");
+
+  // budget feasibility
+  const within = R.totalUSD <= R.budgetUSD + 1e-9;
+  const pct = Math.min(100, R.budgetUSD>0 ? (R.totalUSD/R.budgetUSD)*100 : 100);
+  $("#total-cost").textContent = money(R.totalUSD, profile);
+  $("#bar-fill").style.width = pct + "%";
+  $("#bar-fill").className = within ? "" : "over";
+  const pill = $("#feas-pill");
+  pill.textContent = within ? "Within budget ✓" : "Over budget";
+  pill.className = "pill " + (within ? "ok" : "bad");
+  const overBy = R.totalUSD - R.budgetUSD;
+  $("#budget-line").textContent = within
+    ? `Budget ${money(R.budgetUSD, profile)} · ${money(R.budgetUSD-R.totalUSD, profile)} to spare`
+    : `Budget ${money(R.budgetUSD, profile)} · over by ${money(overBy, profile)}`;
+
+  // substitutions
+  if (R.subs.length){
+    $("#subs-block").classList.remove("hidden");
+    $("#subs").innerHTML = R.subs.map(s =>
+      `<li>🔁 <b>${pretty(s.from)}</b> → <b>${pretty(s.to)}</b> <span class="note">(cheaper swap to fit budget)</span></li>`).join("");
+  } else { $("#subs-block").classList.add("hidden"); }
+
+  // grocery
+  $("#grocery").innerHTML = R.grocery.map(g =>
+    `<tr><td>${pretty(g.item)}</td><td class="q">${fmtQty(g.qty)} ${g.unit}</td><td class="p">${money(g.usd, profile)}</td></tr>`
+  ).join("") + `<tr><td><b>Total</b></td><td></td><td class="p"><b>${money(R.totalUSD, profile)}</b></td></tr>`;
+
+  // todo (with persisted checks)
+  const checked = load(LS.checked, {});
+  $("#todo").innerHTML = R.todo.map(t =>
+    `<label class="${checked[t.id]?"done":""}"><input type="checkbox" data-id="${t.id}" ${checked[t.id]?"checked":""}/><span>${esc(t.text)}</span></label>`
+  ).join("");
+  $("#todo").querySelectorAll("input").forEach(cb => cb.addEventListener("change", e => {
+    const c = load(LS.checked, {}); c[e.target.dataset.id] = e.target.checked; save(LS.checked, c);
+    e.target.closest("label").classList.toggle("done", e.target.checked);
+  }));
+}
+function esc(s){ return String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+/* ============================================================
+   ONBOARDING UI
+   ============================================================ */
+
+function buildOnboarding(){
+  // currency select
+  $("#f-currency").innerHTML = Object.keys(CURRENCIES).map(c =>
+    `<option value="${c}">${c} (${CURRENCIES[c].symbol.trim()})</option>`).join("");
+  // diet chips (single select)
+  $("#f-diet").innerHTML = DIETS.map(d => `<span class="chip" data-v="${d.id}">${d.label}</span>`).join("");
+  $("#f-diet").querySelectorAll(".chip").forEach(ch => ch.addEventListener("click", () => {
+    $("#f-diet").querySelectorAll(".chip").forEach(c=>c.classList.remove("on")); ch.classList.add("on");
+  }));
+  // cuisine chips (multi)
+  $("#f-cuisines").innerHTML = CUISINES.map(c => `<span class="chip" data-v="${c}">${pretty(c)}</span>`).join("");
+  $("#f-cuisines").querySelectorAll(".chip").forEach(ch => ch.addEventListener("click", () => ch.classList.toggle("on")));
+  // live currency symbol
+  $("#f-currency").addEventListener("change", () => {
+    document.querySelectorAll(".cur-sym").forEach(e => e.textContent = CURRENCIES[$("#f-currency").value].symbol.trim());
+  });
+  document.querySelectorAll(".cur-sym").forEach(e => e.textContent = "$");
+}
+
+function prefillOnboarding(p){
+  if (!p) return;
+  $("#f-name").value = p.name || "";
+  $("#f-currency").value = p.currency || "USD";
+  document.querySelectorAll(".cur-sym").forEach(e => e.textContent = (CURRENCIES[p.currency]||CURRENCIES.USD).symbol.trim());
+  $("#f-diet").querySelectorAll(".chip").forEach(c => c.classList.toggle("on", c.dataset.v === p.diet));
+  $("#f-cuisines").querySelectorAll(".chip").forEach(c => c.classList.toggle("on", (p.cuisines||[]).includes(c.dataset.v)));
+  $("#f-allergies").value = (p.allergies||[]).join(", ");
+  $("#f-dislikes").value = (p.dislikes||[]).join(", ");
+  $("#f-daily").value = p.dailyBudget ?? "";
+  $("#f-special").value = p.specialBudget ?? "";
+}
+
+function readOnboarding(){
+  const dietEl = $("#f-diet").querySelector(".chip.on");
+  const list = (s) => s.split(",").map(x=>x.trim().toLowerCase()).filter(Boolean);
+  return {
+    name: $("#f-name").value.trim(),
+    currency: $("#f-currency").value,
+    diet: dietEl ? dietEl.dataset.v : "nonveg",
+    cuisines: [...$("#f-cuisines").querySelectorAll(".chip.on")].map(c=>c.dataset.v),
+    allergies: list($("#f-allergies").value),
+    dislikes: list($("#f-dislikes").value),
+    dailyBudget: Number($("#f-daily").value) || 15,
+    specialBudget: Number($("#f-special").value) || 30,
+  };
+}
+
+/* ============================================================
+   VIEW SWITCHING + SOURCE TOGGLE
+   ============================================================ */
+
+function currentSource(){ return $("#src-toggle").querySelector("button.on").dataset.src; }
+
+function showOnboarding(){ $("#onboarding").classList.remove("hidden"); $("#app").classList.add("hidden"); }
+function showApp(){ $("#onboarding").classList.add("hidden"); $("#app").classList.remove("hidden"); }
+
+function greet(){
+  const p = load(LS.profile, null);
+  const hi = timeOfDay()==="morning"?"Good morning":timeOfDay()==="afternoon"?"Good afternoon":"Good evening";
+  $("#greeting").textContent = p ? `${hi}${p.name?", "+p.name:""} · ${timeOfDay()} · ${p.currency}` : "Let's get cooking";
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+
+function init(){
+  buildOnboarding();
+  greet();
+
+  const profile = load(LS.profile, null);
+  if (profile){ showApp(); restoreOrGenerate(profile); }
+  else { showOnboarding(); }
+
+  // onboarding save
+  $("#save-profile").addEventListener("click", () => {
+    const p = readOnboarding();
+    if (!p.dailyBudget){ alert("Please set a daily budget"); return; }
+    save(LS.profile, p); greet(); showApp(); SEED++; generatePlan();
+  });
+
+  // app controls
+  $("#edit-profile").addEventListener("click", () => { prefillOnboarding(load(LS.profile,null)); showOnboarding(); });
+  $("#generate").addEventListener("click", () => { SEED++; generatePlan(); });
+  $("#regen").addEventListener("click", () => { SEED++; generatePlan(); });
+  $("#special-toggle").addEventListener("change", () => { SEED++; generatePlan(); });
+
+  // source toggle
+  $("#src-toggle").querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+    $("#src-toggle").querySelectorAll("button").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on");
+    $("#ai-key").classList.toggle("hidden", b.dataset.src !== "ai");
+  }));
+  $("#save-key").addEventListener("click", () => {
+    save(LS.apikey, $("#f-apikey").value.trim());
+    setStatus("Key saved ✓ — generating with Claude…"); SEED++; generatePlan();
+  });
+  $("#f-apikey").value = load(LS.apikey, "");
+}
+
+function restoreOrGenerate(profile){
+  const saved = load(LS.plan, null);
+  if (saved && saved.plan){
+    $("#special-toggle").checked = !!saved.isSpecial;
+    render(profile, saved);
+    setStatus("Showing your last plan — hit Generate for a fresh one.");
+  } else {
+    generatePlan();
+  }
+}
+
+document.addEventListener("DOMContentLoaded", init);
+</script>
+</body>
+</html>
